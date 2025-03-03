@@ -25,4 +25,4 @@
 
 void led_init(void);
 
-#endif
+#endif /* __LED_H__ */
