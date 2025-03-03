@@ -1,0 +1,50 @@
+{
+    "workbench.startupEditor": "none",
+    "editor.fontLigatures": true,
+    "editor.fontFamily": "Fira Code Retina, '圆体-简', monospace",
+    "explorer.confirmDelete": false,
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**"
+    ],
+
+    "files.associations": {
+        "inl_common.h": "c",
+        "debug.h": "c",
+        "fml_system.h": "c",
+        "fml_env.h": "c",
+        "type.h": "c",
+        "jansson.h": "c",
+        "mrcomm_type.h": "c",
+        "fml_env_param.h": "c",
+        "mrconfenv_keyboard040.h": "c",
+        "keyboard_040.h": "c",
+        "fml_env_load.h": "c",
+        "fml_env_dump.h": "c"
+    },
+
+    "editor.semanticTokenColorCustomizations": {
+        "enabled": true,
+        "rules": {
+            "variable.global": {
+                "foreground": "#ff00ea",
+                "fontStyle": "bold"
+            },
+            "variable.local": {
+                "foreground": "#1d862d",
+                "fontStyle": "bold"
+            }
+        }
+    },
+    "search.exclude":
+    {
+        "**/OUTPUT/*" :true,
+        "**/PROJECTS/*" :true
+    },
+    "files.exclude": {
+        "**/OUTPUT/*" :true,
+        "**/PROJECTS/*" :true
+    },
+    "editor.fontVariations": false,
+    "editor.codeActionsOnSave": {},
+    "editor.fontSize": 14,
+}
