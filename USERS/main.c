@@ -4,7 +4,10 @@
 
 #include "../MIDDLEWARS/Drivers/LED/led.h"
 #include "../MIDDLEWARS/Drivers/KEY/key.h"
+#include "../MIDDLEWARS/Drivers/EXTI/exti.h"
 
+/* 通过外部中断，就不需要扫描按键GPIO的输入，由中断事件来触发
+    这样实时性又高，代码量又少 */
 int main(void)
 {
     uint8_t key;
@@ -14,32 +17,11 @@ int main(void)
     delay_init(170);
     
     led_init();
-    key_init();
+    key_init(); // 要比extix_init先初始化
+    extix_init();
     
     while(1)
     {
-        key = key_scan(0);  //获取键值
-        
-        if(key)
-        {
-            switch(key)
-            {
-                case KEY0_PRES:     // 控制LED翻转
-                    LED0_TOGGLE();  // LED取反
-                    break;
-                case KEY1_PRES:     // 控制LED翻转
-                    LED1_TOGGLE();  // LED取反
-                    break;
-                case KEY2_PRES:     // 控制LED翻转
-                    LED0_TOGGLE();  // LED取反
-                    LED1_TOGGLE();  // LED取反
-                    break;
-                default: break;
-            }
-        }
-        else
-        {
-            delay_ms(10);
-        }
+        delay_ms(1000);
     }
 }
