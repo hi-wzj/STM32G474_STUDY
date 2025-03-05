@@ -4,7 +4,7 @@
 
 #include "../MIDDLEWARS/Drivers/LED/led.h"
 #include "../MIDDLEWARS/Drivers/KEY/key.h"
-#include "../MIDDLEWARS/Drivers/IWDG/iwdg.h"
+#include "../MIDDLEWARS/Drivers/WWDG/wwdg.h"
 
 int main(void)
 {
@@ -16,13 +16,12 @@ int main(void)
     led_init();
     key_init();
     
-    delay_ms(100);  // 延时 100ms,LED0 的变化"可见"
-    iwdg_init(IWDG_PRESCALER_64, 500);
     LED0(0);
+    delay_ms(300);  // 延时 300ms,LED0 的变化"可见"
+    wwdg_init(WWDG_PRESCALER_8, 0X5F, 0X7F); // 计数器值为 7f,窗口寄存器为 5f,8 分频
+    
     while(1)
     {
-        if(key_scan(1) == KEY0_PRES)
-            iwdg_feed();
-        delay_ms(10);    
+        LED0(1);  
     }
 }

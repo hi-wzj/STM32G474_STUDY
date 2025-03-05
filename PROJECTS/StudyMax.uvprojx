@@ -429,6 +429,11 @@
               <FileType>1</FileType>
               <FilePath>..\MIDDLEWARS\Drivers\IWDG\iwdg.c</FilePath>
             </File>
+            <File>
+              <FileName>wwdg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MIDDLEWARS\Drivers\WWDG\wwdg.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -503,6 +508,11 @@
               <FileName>stm32g4xx_hal_iwdg.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\MIDDLEWARS\STM32G4xx_HAL_Driver\Src\stm32g4xx_hal_iwdg.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32g4xx_hal_wwdg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MIDDLEWARS\STM32G4xx_HAL_Driver\Src\stm32g4xx_hal_wwdg.c</FilePath>
             </File>
           </Files>
         </Group>
