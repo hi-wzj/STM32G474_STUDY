@@ -6,9 +6,10 @@
 /* LCD缓存大小设置，修改此值时请注意！！！！修改这两个值时可能会影响以下函数 lcd_clear/lcd_fill/lcd_draw_line */
 #define LCD_TOTAL_BUF_SIZE      (LCD_WIDTH * LCD_HEIGHT * 2)
 #define LCD_BUF_SIZE            11520
+
 static uint8_t lcd_buf[LCD_BUF_SIZE];
 
-uint16_t g_piont_color = WHITE;
+uint16_t g_point_color = WHITE;
 uint16_t g_black_color = WHITE;
 
 static void lcd_gpio_init(void)
@@ -62,21 +63,18 @@ static void lcd_spi_send(uint8_t *data, uint32_t size)
     LCD_CS(1);
 }
 
-/* 写命令到LCD */
 static void lcd_write_cmd(uint8_t cmd)
 {
     LCD_WR(0);
     lcd_spi_send(&cmd, 1);
 }
 
-/* 写数据到LCD */
 static void lcd_write_data(uint8_t data)
 {
     LCD_WR(1);
     lcd_spi_send(&data, 1);
 }
 
-/* 写半个字的数据到LCD */
 static void lcd_write_halfword(const uint16_t half_da)
 {
     uint8_t data[2] = {0};
@@ -88,7 +86,6 @@ static void lcd_write_halfword(const uint16_t half_da)
     lcd_spi_send(data, 2);
 }
 
-/* 设置数据写入LCD缓存区域 */
 static void lcd_address_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
     lcd_write_cmd(0x2a);
@@ -106,26 +103,36 @@ static void lcd_address_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
     lcd_write_cmd(0x2c);
 }
 
-/* 打开LCD显示 */
+/**
+ * @brief       m^n函数
+ * @param       m,n     输入参数
+ * @retval      m^n次方
+ */
+static uint32_t lcd_pow(uint8_t m, uint8_t n)
+{
+    uint32_t result = 1;
+
+    while(n--)result *= m;
+
+    return result;
+}
+
 void lcd_display_on(void)
 {
     LCD_PWR(1);
 }
 
-/* 关闭LCD显示 */
 void lcd_display_off(void)
 {
     LCD_PWR(0);
 }
 
-/* 画点函数 */
 void lcd_draw_point(uint16_t x, uint16_t y, uint16_t color)
 {
     lcd_address_set(x, y, x ,y);
     lcd_write_halfword(color);
 }
 
-/* 显示一个字符 */
 void lcd_show_char(uint16_t x, uint16_t y, char chr,
                     uint8_t size, uint8_t mode, uint8_t color)
 {
@@ -246,7 +253,6 @@ void lcd_clear(uint16_t color)
     }
 }
 
-/* LCD初始化 */
 void lcd_init(void)
 {
     lcd_gpio_init();            /* 硬件接口初始化 */
@@ -362,7 +368,6 @@ void lcd_init(void)
     LCD_PWR(1); // 打开显示
 }
 
-/* 显示字符串 */
 void lcd_show_string(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t size, char *p, uint16_t color)
 {
     uint8_t x0 = x;
@@ -382,5 +387,237 @@ void lcd_show_string(uint16_t x, uint16_t y, uint16_t width, uint16_t height, ui
         lcd_show_char(x, y, *p, size, 0, color);
         x += size / 2;
         p++;
+    }
+}
+
+void lcd_fill(uint16_t x_start, uint16_t y_start, uint16_t x_end, uint16_t y_end, uint16_t color)
+{
+    uint16_t i = 0;
+    uint32_t size = 0, size_remain = 0;
+
+    size = (x_end - x_start + 1) * (y_end - y_start + 1) * 2;
+
+    if(size > LCD_BUF_SIZE)
+    {
+        size_remain = size - LCD_BUF_SIZE;
+        size = LCD_BUF_SIZE;
+    }
+
+    lcd_address_set(x_start, y_start, x_end, y_end);
+
+    while(1)
+    {
+        for(i = 0; i < size / 2; i++)
+        {
+            lcd_buf[2 * i] = color >> 8;
+            lcd_buf[2 * i + 1] = color;
+        }
+
+        LCD_WR(1);
+        lcd_spi_send(lcd_buf, size);
+
+        if(size_remain == 0)
+            break;
+
+        if(size_remain > LCD_BUF_SIZE)
+        {
+            size_remain = size_remain - LCD_BUF_SIZE;
+        }
+
+        else
+        {
+            size = size_remain;
+            size_remain = 0;
+        }
+    }
+}
+
+void lcd_draw_line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,uint16_t color)
+{
+    uint16_t t;
+    int xerr = 0, yerr = 0, delta_x, delta_y, distance;
+    int incx, incy, row, col;
+    uint32_t i = 0;
+
+    if (y1 == y2)
+    {
+        /*快速画水平线*/
+        lcd_address_set(x1, y1, x2, y2);
+
+        for (i = 0; i < x2 - x1; i++)
+        {
+            lcd_buf[2 * i] = g_point_color >> 8;
+            lcd_buf[2 * i + 1] = g_point_color;
+        }
+
+        LCD_WR(1);
+        lcd_spi_send(lcd_buf, (x2 - x1) * 2);
+        return;
+    }
+
+    delta_x = x2 - x1;
+    delta_y = y2 - y1;
+    row = x1;
+    col = y1;
+
+    if (delta_x > 0)
+    {
+        incx = 1;
+    }
+    else if (delta_x == 0)
+    {
+        incx = 0;
+    }
+    else
+    {
+        incx = -1;
+        delta_x = -delta_x;
+    }
+
+    if (delta_y > 0)
+    {
+        incy = 1;
+    }
+    else if (delta_y == 0)
+    {
+        incy = 0;
+    }
+    else
+    {
+        incy = -1;
+        delta_y = -delta_y;
+    }
+
+    if (delta_x > delta_y)
+    {
+        distance = delta_x;
+    }
+    else
+    {
+        distance = delta_y;
+    }
+
+    for (t = 0; t <= distance + 1; t++)
+    {
+        lcd_draw_point(row, col,color);
+        xerr += delta_x ;
+        yerr += delta_y ;
+
+        if (xerr > distance)
+        {
+            xerr -= distance;
+            row += incx;
+        }
+
+        if (yerr > distance)
+        {
+            yerr -= distance;
+            col += incy;
+        }
+    }
+}
+
+void lcd_draw_circle(uint16_t x0, uint16_t y0, uint8_t r,uint16_t color)
+{
+    int a, b;
+    int di;
+    a = 0;
+    b = r;
+    di = 3 - (r << 1);
+
+    while (a <= b)
+    {
+        lcd_draw_point(x0 - b, y0 - a, color);
+        lcd_draw_point(x0 + b, y0 - a, color);
+        lcd_draw_point(x0 - a, y0 + b, color);
+        lcd_draw_point(x0 - b, y0 - a, color);
+        lcd_draw_point(x0 - a, y0 - b, color);
+        lcd_draw_point(x0 + b, y0 + a, color);
+        lcd_draw_point(x0 + a, y0 - b, color);
+        lcd_draw_point(x0 + a, y0 + b, color);
+        lcd_draw_point(x0 - b, y0 + a, color);
+        a++;
+
+        if (di < 0)
+        {
+            di += 4 * a + 6;
+        }
+        else
+        {
+            di += 10 + 4 * (a - b);
+            b--;
+        }
+
+        lcd_draw_point(x0 + a, y0 + b, color);
+    }
+}
+
+void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,uint16_t color)
+{
+    lcd_draw_line(x1, y1, x2, y1,color);
+    lcd_draw_line(x1, y1, x1, y2,color);
+    lcd_draw_line(x1, y2, x2, y2,color);
+    lcd_draw_line(x2, y1, x2, y2,color);
+}
+
+void lcd_show_num(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint8_t size, uint16_t color)
+{
+    uint8_t t, temp;
+    uint8_t enshow = 0;
+
+    for (t = 0; t < len; t++)   /* 按总显示位数循环 */
+    {
+        temp = (num / lcd_pow(10, len - t - 1)) % 10;   /* 获取对应位的数字 */
+
+        if (enshow == 0 && t < (len - 1))   /* 没有使能显示,且还有位要显示 */
+        {
+            if (temp == 0)
+            {
+                lcd_show_char(x + (size / 2)*t, y, ' ', size, 0, color);/* 显示空格,占位 */
+                continue;   /* 继续下个一位 */
+            }
+            else
+            {
+                enshow = 1; /* 使能显示 */
+            }
+
+        }
+
+        lcd_show_char(x + (size / 2)*t, y, temp + '0', size, 0, color); /* 显示字符 */
+    }
+}
+
+void lcd_show_xnum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint8_t size, uint8_t mode, uint16_t color)
+{
+    uint8_t t, temp;
+    uint8_t enshow = 0;
+
+    for (t = 0; t < len; t++)   /* 按总显示位数循环 */
+    {
+        temp = (num / lcd_pow(10, len - t - 1)) % 10;    /* 获取对应位的数字 */
+
+        if (enshow == 0 && t < (len - 1))   /* 没有使能显示,且还有位要显示 */
+        {
+            if (temp == 0)
+            {
+                if (mode & 0X80)   /* 高位需要填充0 */
+                {
+                    lcd_show_char(x + (size / 2)*t, y, '0', size, mode & 0X01, color);  /* 用0占位 */
+                }
+                else
+                {
+                    lcd_show_char(x + (size / 2)*t, y, ' ', size, mode & 0X01, color);  /* 用空格占位 */
+                }
+
+                continue;
+            }
+            else
+            {
+                enshow = 1; /* 使能显示 */
+            }
+
+        }
+
+        lcd_show_char(x + (size / 2)*t, y, temp + '0', size, mode & 0X01, color);
     }
 }

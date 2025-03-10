@@ -25,5 +25,7 @@
 #define LED1_TOGGLE() do { HAL_GPIO_TogglePin(LED1_GPIO_PROT, LED1_GPIO_PIN); } while (0);
 
 void led_init(void);
+void led_set(uint8_t sta);
+void test_fun(void(*ledset)(uint8_t), uint8_t sta);
 
 #endif /* __LED_H__ */
